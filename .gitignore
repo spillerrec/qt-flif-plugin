@@ -1,0 +1,9 @@
+Makefile
+*.Debug
+*.Release
+debug
+release
+ui_*.h
+*.o
+*.so
+moc_*.cpp
