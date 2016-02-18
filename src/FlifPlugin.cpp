@@ -36,7 +36,8 @@ class FlifHandler: public QImageIOHandler{
 	private:
 		int quality;
 		FlifDecoder decoder;
-		int frame{ 0 };
+		int frame{ -1 };
+		int lastImageDelay{ 0 };
 		
 	public:
 		FlifHandler( QIODevice *device ){
@@ -46,7 +47,7 @@ class FlifHandler: public QImageIOHandler{
 			
 			QByteArray data = device->readAll();
 			if( !decoder.decodeMemory( data.constData(), data.size() ) )
-				frame = -1;
+				frame = -2;
 		}
 		
 		bool loaded() const{ return frame >= 0; }
@@ -72,8 +73,8 @@ class FlifHandler: public QImageIOHandler{
 		}
 		bool jumpToNextImage() override{ return jumpToImage(frame+1); }
 		int imageCount() const override{ return decoder.imageCount(); }
-		int nextImageDelay() const override{ return decoder.getImage(frame).getFrameDelay(); } //TODO: not liking getImage here, as I don't know if it is a fast operation or not
-		int loopCount() const override{ return decoder.loopCount()-1; } //TODO: Figure out this value
+		int nextImageDelay() const override{ return lastImageDelay; }
+		int loopCount() const override{ return /*decoder.loopCount()*/-1; } //TODO: Figure out this value
 		int currentImageNumber() const override{ return frame; }
 		
 		void setOption( ImageOption option, const QVariant& value ) override{
@@ -96,7 +97,8 @@ bool FlifHandler::canRead() const{
 
 
 bool FlifHandler::read( QImage *img_pointer ){
-	if( imageCount() <= frame && !loaded() )
+	frame++;
+	if( imageCount() <= frame || !loaded() )
 		return false;
 	
 	auto img = decoder.getImage( frame );
@@ -111,6 +113,7 @@ bool FlifHandler::read( QImage *img_pointer ){
 			line[ix] = qRgba( buffer[ix*4+0], buffer[ix*4+1], buffer[ix*4+2], buffer[ix*4+3] );
 	}
 	
+	lastImageDelay = img.getFrameDelay();
 	*img_pointer = out;
 	return true;
 }
