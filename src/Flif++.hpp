@@ -20,10 +20,10 @@
 
 #include <FLIF/flif.h>
 #include <FLIF/flif_dec.h>
-
+#include <FLIF/flif_enc.h>
 
 class FlifImage{
-	private:
+	public: //TODO: fix
 		FLIF_IMAGE* image{ nullptr };
 		
 	public:
@@ -49,8 +49,7 @@ class FlifImage{
 		
 		void writeRowRgba8( uint32_t row, const void* buffer, size_t buffer_size_bytes )
 			{ flif_image_write_row_RGBA8( image, row, buffer, buffer_size_bytes ); }
-		
-};	
+};
 
 class FlifDecoder{
 	private:
@@ -94,6 +93,69 @@ class FlifDecoder{
 		
 		FlifImage getImage( size_t index ) const //??
 			{ return { flif_decoder_get_image( d, index ) }; }
+};
+
+    typedef struct FLIF_ENCODER FLIF_ENCODER;
+
+    FLIF_DLLIMPORT FLIF_ENCODER* FLIF_API flif_create_encoder();
+    FLIF_DLLIMPORT void FLIF_API flif_destroy_encoder(FLIF_ENCODER* encoder);
+
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_interlaced(FLIF_ENCODER* encoder, uint32_t interlaced);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_learn_repeat(FLIF_ENCODER* encoder, uint32_t learn_repeats);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_auto_color_buckets(FLIF_ENCODER* encoder, uint32_t acb);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_palette_size(FLIF_ENCODER* encoder, int32_t palette_size);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_lookback(FLIF_ENCODER* encoder, int32_t loopback);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_divisor(FLIF_ENCODER* encoder, int32_t divisor);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_min_size(FLIF_ENCODER* encoder, int32_t min_size);
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_split_threshold(FLIF_ENCODER* encoder, int32_t split_threshold);
+
+    FLIF_DLLIMPORT void FLIF_API flif_encoder_add_image(FLIF_ENCODER* encoder, FLIF_IMAGE* image);
+    FLIF_DLLIMPORT int32_t FLIF_API flif_encoder_encode_file(FLIF_ENCODER* encoder, const char* filename);
+    FLIF_DLLIMPORT int32_t FLIF_API flif_encoder_encode_memory(FLIF_ENCODER* encoder, void** buffer, size_t* buffer_size_bytes);
+
+class FlifEncoder{
+	private:
+		FLIF_ENCODER* encoder{ nullptr };
+		
+	public:
+		FlifEncoder() : encoder( flif_create_encoder() ){
+			//TODO: throw on nullptr
+		}
+		FlifEncoder( const FlifEncoder& ) = delete;
+		FlifEncoder( FlifEncoder&& e ) : encoder( e.encoder ) { e.encoder = nullptr; }
+		~FlifEncoder(){ flif_destroy_encoder( encoder ); }
+		
+		void setInterlaced( uint32_t interlaced )
+			{ flif_encoder_set_interlaced( encoder, interlaced ); }
+			
+		void setLearnRepeat( uint32_t learn_repeats )
+			{ flif_encoder_set_learn_repeat( encoder, learn_repeats ); }
+		
+		void setAutoColorBuckets( uint32_t acb )
+			{ flif_encoder_set_auto_color_buckets( encoder, acb ); }
+		
+		void setPaletteSize( int32_t palette_size )
+			{ flif_encoder_set_palette_size( encoder, palette_size ); }
+		
+		void setLookback( int32_t lookback )
+			{ flif_encoder_set_lookback( encoder, lookback ); }
+		
+		void setDivisor( int32_t divisor )
+			{ flif_encoder_set_divisor( encoder, divisor ); }
+		
+		void setMinSize( int32_t min_size )
+			{ flif_encoder_set_min_size( encoder, min_size ); }
+		
+		void setSplitThreshold( int32_t split_threshold )
+			{ flif_encoder_set_split_threshold( encoder, split_threshold ); }
+		
+		
+		void addImage( FlifImage& image )
+			{ flif_encoder_add_image( encoder, image.image ); } //TODO: fix
+		int32_t encodeFile( const char* filename )
+			{ return flif_encoder_encode_file( encoder, filename ); }
+		int32_t encodeMemory( void** buffer, size_t& buffer_size_bytes )
+			{ return flif_encoder_encode_memory( encoder, buffer, &buffer_size_bytes ); }
 };
 
 #endif

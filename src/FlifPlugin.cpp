@@ -44,10 +44,6 @@ class FlifHandler: public QImageIOHandler{
 			setDevice( device );
 			setFormat( "flif" );
 			quality = 100;
-			
-			QByteArray data = device->readAll();
-			if( !decoder.decodeMemory( data.constData(), data.size() ) )
-				frame = -2;
 		}
 		
 		bool loaded() const{ return frame >= 0; }
@@ -72,7 +68,7 @@ class FlifHandler: public QImageIOHandler{
 			return false;	
 		}
 		bool jumpToNextImage() override{ return jumpToImage(frame+1); }
-		int imageCount() const override{ return decoder.imageCount(); }
+		int imageCount() const override{ return loaded() ? decoder.imageCount() : 0; }
 		int nextImageDelay() const override{ return lastImageDelay; }
 		int loopCount() const override{ return /*decoder.loopCount()*/-1; } //TODO: Figure out this value
 		int currentImageNumber() const override{ return frame; }
@@ -85,7 +81,7 @@ class FlifHandler: public QImageIOHandler{
 		}
 		QVariant option( ImageOption option ) const override{
 			switch( option ){
-				case Animation: return loaded() ? loopCount() != 0 : true;
+				case Animation: return loaded() ? loopCount() != 0 : true; //TODO: is true the good default?
 				default: return {};
 			}
 		}
@@ -97,8 +93,15 @@ bool FlifHandler::canRead() const{
 
 
 bool FlifHandler::read( QImage *img_pointer ){
+	//Read data on first frame
+	if( !loaded() ){
+		auto data = device()->readAll();
+		if( !decoder.decodeMemory( data.constData(), data.size() ) )
+			return false;
+	}
+	
 	frame++;
-	if( imageCount() <= frame || !loaded() )
+	if( imageCount() <= frame )
 		return false;
 	
 	auto img = decoder.getImage( frame );
@@ -118,55 +121,47 @@ bool FlifHandler::read( QImage *img_pointer ){
 	return true;
 }
 
-bool FlifHandler::write( const QImage &img ){
-	/*
-	QImage image = img;
-	uint8_t* data = new uint8_t[ stride * image.height() ];
-	if( !data )
-		return false;
+static void addImage( FlifEncoder& encoder, const QImage& in ){
+	FlifImage img( in.width(), in.height() );
 	
-	//Make sure the input is in ARGB
-	if( image.format() != QImage::Format_RGB32 && image.format() != QImage::Format_ARGB32 )
-		image = image.convertToFormat( QImage::Format_ARGB32 );
-	
-	for( int iy=0; iy<image.height(); ++iy ){
-		const QRgb* in = (const QRgb*)image.constScanLine( iy );
-		uint8_t* out = data + iy*stride;
+	auto buffer = std::make_unique<uint8_t[]>( in.width() * 4 );
+ 	for( int iy=0; iy<in.height(); iy++ ){
+		auto line = (const QRgb*)in.constScanLine( iy );
 		
-		for( int ix=0; ix<image.width(); ++ix, ++in ){
-			*(out++) = qRed( *in );
-			*(out++) = qGreen( *in );
-			*(out++) = qBlue( *in );
-			if( alpha )
-				*(out++) = qAlpha( *in );
+		for( int ix=0; ix<in.width(); ix++ ){
+			buffer[ix*4+0] = qRed( line[ix] );
+			buffer[ix*4+1] = qGreen( line[ix] );
+			buffer[ix*4+2] = qBlue( line[ix] );
+			buffer[ix*4+3] = qAlpha( line[ix] );
 		}
+		
+		img.writeRowRgba8( iy, buffer.get(), in.width() * 4 );
 	}
 	
-	uint8_t* output = NULL;
-	size_t size;
-	
-	if( quality == 100 ){
-		//Lossless
-		if( alpha )
-			size = WebPEncodeLosslessRGBA( data, image.width(), image.height(), stride, &output );
-		else
-			size = WebPEncodeLosslessRGB( data, image.width(), image.height(), stride, &output );
-	}
-	else{
-		//Lossy
-		if( alpha )
-			size = WebPEncodeRGBA( data, image.width(), image.height(), stride, quality+1, &output );
-		else
-			size = WebPEncodeRGB( data, image.width(), image.height(), stride, quality+1, &output );
-	}
-	
-	delete[] data;
-	if( !output || size == 0 )
+	encoder.addImage( img ); //TODO: investigate memory model
+}
+
+bool FlifHandler::write( const QImage& image ){
+	//No mention of how animation is to be handled, I believe it is not supported
+	frame++;
+	if( frame != 0 )
 		return false;
 	
-	device()->write( (char*)output, size );
-	free( output );
-	*/
+	FlifEncoder encoder;
+	
+	if( image.format() != QImage::Format_RGB32 && image.format() != QImage::Format_ARGB32 )
+		addImage( encoder, image.convertToFormat( QImage::Format_ARGB32 ) );
+	else
+		addImage( encoder, image );
+	
+	//Write to device
+	char* data { nullptr };
+	size_t size { 0 };
+	if( !encoder.encodeMemory( (void**)&data, size ) )
+		return false;
+	device()->write( data, size );
+	free( data );
+	
 	return true;
 }
 
