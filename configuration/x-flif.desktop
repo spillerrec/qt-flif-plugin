@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=MimeType
+MimeType=image/x-flif
+Patterns=*.flif;
+Comment=FLIF - Free Lossless Image Format
