@@ -39,10 +39,10 @@ class FlifImage{
 		
 		~FlifImage(){ /*flif_destroy_image( image );*/ } //TODO: getImage is non-owning?
 		
-		uint32_t getWidth(){ return flif_image_get_width( image ); }
-		uint32_t getHeight(){ return flif_image_get_height( image ); }
-		uint8_t  getChannelCount(){ return flif_image_get_nb_channels( image ); }
-		uint32_t getFrameDelay(){ return flif_image_get_frame_delay( image ); }
+		uint32_t getWidth() const{ return flif_image_get_width( image ); }
+		uint32_t getHeight() const{ return flif_image_get_height( image ); }
+		uint8_t  getChannelCount() const{ return flif_image_get_nb_channels( image ); }
+		uint32_t getFrameDelay() const{ return flif_image_get_frame_delay( image ); }
 		
 		void readRowRgba8( uint32_t row, void* buffer, size_t buffer_size_bytes )
 			{ flif_image_read_row_RGBA8( image, row, buffer, buffer_size_bytes ); }
@@ -86,13 +86,13 @@ class FlifDecoder{
 		int32_t decodeMemory( const void* buffer, size_t buffer_size_bytes )
 			{ return flif_decoder_decode_memory( d, buffer, buffer_size_bytes ); }
 		
-		size_t imageCount()
+		size_t imageCount() const
 			{ return flif_decoder_num_images( d ); }
 		
-		int32_t loopCount()
+		int32_t loopCount() const
 			{ return flif_decoder_num_loops( d ); }
 		
-		FlifImage getImage( size_t index )
+		FlifImage getImage( size_t index ) const //??
 			{ return { flif_decoder_get_image( d, index ) }; }
 };
 

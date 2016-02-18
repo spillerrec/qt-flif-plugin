@@ -21,6 +21,7 @@
 #include <QImageIOPlugin>
 #include <QColor>
 #include <QVariant>
+#include <QDebug>
 #include <memory>
 
 #include "FlifPlugin.hpp"
@@ -35,28 +36,57 @@ class FlifHandler: public QImageIOHandler{
 	private:
 		int quality;
 		FlifDecoder decoder;
+		int frame{ 0 };
 		
 	public:
 		FlifHandler( QIODevice *device ){
 			setDevice( device );
 			setFormat( "flif" );
 			quality = 100;
+			
+			QByteArray data = device->readAll();
+			if( !decoder.decodeMemory( data.constData(), data.size() ) )
+				frame = -1;
 		}
 		
-		bool canRead() const;
-		bool read( QImage *image );
-		bool write( const QImage &image );
+		bool loaded() const{ return frame >= 0; }
 		
-		bool supportsOption( ImageOption option ) const{
+		bool canRead() const override;
+		bool read( QImage *image ) override;
+		bool write( const QImage &image ) override;
+		
+		bool supportsOption( ImageOption option ) const override{
 			switch( option ){
 				case Quality: return true;
+				case Animation: return true;
 				default: return false;
 			};
 		}
 		
-		void setOption( ImageOption option, const QVariant& value ){
-			if( option == Quality )
-				quality = value.toInt();
+		bool jumpToImage( int index ) override{
+			if( index < imageCount() ){
+				frame = index;
+				return true;
+			}
+			return false;	
+		}
+		bool jumpToNextImage() override{ return jumpToImage(frame+1); }
+		int imageCount() const override{ return decoder.imageCount(); }
+		int nextImageDelay() const override{ return decoder.getImage(frame).getFrameDelay(); } //TODO: not liking getImage here, as I don't know if it is a fast operation or not
+		int loopCount() const override{ return decoder.loopCount()-1; } //TODO: Figure out this value
+		int currentImageNumber() const override{ return frame; }
+		
+		void setOption( ImageOption option, const QVariant& value ) override{
+			switch( option ){
+				case Quality: quality = value.toInt(); break;
+				default: break;
+			};
+		}
+		QVariant option( ImageOption option ) const override{
+			switch( option ){
+				case Animation: return loaded() ? loopCount() != 0 : true;
+				default: return {};
+			}
 		}
 };
 
@@ -66,24 +96,18 @@ bool FlifHandler::canRead() const{
 
 
 bool FlifHandler::read( QImage *img_pointer ){
-	QByteArray data = device()->readAll();
-	int width, height;
-	
-	if( !decoder.decodeMemory( data.constData(), data.size() ) )
+	if( imageCount() <= frame && !loaded() )
 		return false;
 	
-	if( decoder.imageCount() == 0 )
-		return false;
-	
-	auto img = decoder.getImage( 0 );
+	auto img = decoder.getImage( frame );
 	QImage out( img.getWidth(), img.getHeight(), QImage::Format_ARGB32 );
 	
 	auto buffer = std::make_unique<uint8_t[]>( out.width() * 4 );
- 	for( unsigned iy=0; iy<out.height(); iy++ ){
+ 	for( int iy=0; iy<out.height(); iy++ ){
 		img.readRowRgba8( iy, buffer.get(), out.width() * 4 );
 		auto line = (QRgb*)out.scanLine( iy );
 		
-		for( unsigned ix=0; ix<out.width(); ix++ )
+		for( int ix=0; ix<out.width(); ix++ )
 			line[ix] = qRgba( buffer[ix*4+0], buffer[ix*4+1], buffer[ix*4+2], buffer[ix*4+3] );
 	}
 	
@@ -92,11 +116,8 @@ bool FlifHandler::read( QImage *img_pointer ){
 }
 
 bool FlifHandler::write( const QImage &img ){
-	QImage image = img;
-	bool alpha = image.hasAlphaChannel();
-	unsigned pixel_count = alpha ? 4 : 3;
-	unsigned stride = pixel_count * image.width();
 	/*
+	QImage image = img;
 	uint8_t* data = new uint8_t[ stride * image.height() ];
 	if( !data )
 		return false;
@@ -151,14 +172,14 @@ QStringList FlifPlugin::keys() const{
 	return QStringList() << "flif";
 }
 
-QImageIOPlugin::Capabilities FlifPlugin::capabilities( QIODevice *device, const QByteArray &format ) const{
+QImageIOPlugin::Capabilities FlifPlugin::capabilities( QIODevice*, const QByteArray &format ) const{
 	if( format == "flif" )
-		return Capabilities( CanRead /*| CanWrite*/ );
+		return Capabilities( CanRead | CanWrite );
 	else
 		return 0;
 }
 
-QImageIOHandler* FlifPlugin::create( QIODevice *device, const QByteArray &format ) const{
+QImageIOHandler* FlifPlugin::create( QIODevice* device, const QByteArray& ) const{
 	return new FlifHandler( device );
 }
 

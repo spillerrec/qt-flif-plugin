@@ -6,12 +6,14 @@ FLIF is a new lossless image format providing superior compression performance c
 ### Features
 
 - Reading FLIF images
+- Animation
 
 ### TODO
 
-- Supporting animation
+- Making sure loop count and frame delay is interpreted correctly
+- Support setScale and resize
 - Writing FLIF images
-- Completing the TODO list
+- Avoiding loading the entire image in the constructor
 
 ### Building
 
