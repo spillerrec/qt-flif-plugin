@@ -95,23 +95,6 @@ class FlifDecoder{
 			{ return { flif_decoder_get_image( d, index ) }; }
 };
 
-    typedef struct FLIF_ENCODER FLIF_ENCODER;
-
-    FLIF_DLLIMPORT FLIF_ENCODER* FLIF_API flif_create_encoder();
-    FLIF_DLLIMPORT void FLIF_API flif_destroy_encoder(FLIF_ENCODER* encoder);
-
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_interlaced(FLIF_ENCODER* encoder, uint32_t interlaced);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_learn_repeat(FLIF_ENCODER* encoder, uint32_t learn_repeats);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_auto_color_buckets(FLIF_ENCODER* encoder, uint32_t acb);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_palette_size(FLIF_ENCODER* encoder, int32_t palette_size);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_lookback(FLIF_ENCODER* encoder, int32_t loopback);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_divisor(FLIF_ENCODER* encoder, int32_t divisor);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_min_size(FLIF_ENCODER* encoder, int32_t min_size);
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_set_split_threshold(FLIF_ENCODER* encoder, int32_t split_threshold);
-
-    FLIF_DLLIMPORT void FLIF_API flif_encoder_add_image(FLIF_ENCODER* encoder, FLIF_IMAGE* image);
-    FLIF_DLLIMPORT int32_t FLIF_API flif_encoder_encode_file(FLIF_ENCODER* encoder, const char* filename);
-    FLIF_DLLIMPORT int32_t FLIF_API flif_encoder_encode_memory(FLIF_ENCODER* encoder, void** buffer, size_t* buffer_size_bytes);
 
 class FlifEncoder{
 	private:
