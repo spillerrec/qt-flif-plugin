@@ -7,3 +7,5 @@ ui_*.h
 *.o
 *.so
 moc_*.cpp
+build/*
+build-qt4/*
