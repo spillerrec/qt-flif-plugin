@@ -11,7 +11,7 @@ set(CMAKE_AUTOMOC ON)
 include_directories(/usr/include/FLIF)
  
 add_library(flif MODULE src/FlifPlugin.cpp)
-target_link_libraries(flif Qt5::Gui)
+target_link_libraries(flif Qt5::Gui -lflif)
 
 # Turn on warnings
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
