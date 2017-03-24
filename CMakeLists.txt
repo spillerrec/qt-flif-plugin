@@ -6,6 +6,8 @@ include(KDEInstallDirs)
 
 find_package(Qt5Gui REQUIRED)
 
+set(CMAKE_AUTOMOC ON)
+
 include_directories(/usr/include/FLIF)
  
 add_library(flif MODULE src/FlifPlugin.cpp)
