@@ -18,6 +18,7 @@
 #ifndef FLIFPP_HPP
 #define FLIFPP_HPP
 
+#include <memory>
 #include <FLIF/flif.h>
 #include <FLIF/flif_dec.h>
 #include <FLIF/flif_enc.h>
@@ -25,19 +26,23 @@
 class FlifImage{
 	public: //TODO: fix
 		FLIF_IMAGE* image{ nullptr };
+		bool owning;
 		
 	public:
-		FlifImage( FLIF_IMAGE* image ) : image(image) { }
+		FlifImage( FLIF_IMAGE* image, bool owning ) : image(image), owning(owning) { }
 		FlifImage( uint32_t width, uint32_t height )
-			: image( flif_create_image( width, height ) ) {
+			: image( flif_create_image( width, height ) ), owning(true) {
 				//TODO: throw on nullptr
 			}
 		
 		FlifImage( const FlifImage& ) = delete;
-		FlifImage( FlifImage&& img ) : image( img.image )
+		FlifImage( FlifImage&& img ) : image( img.image ), owning( img.owning )
 			{ img.image = nullptr; }
 		
-		~FlifImage(){ /*flif_destroy_image( image );*/ } //TODO: getImage is non-owning?
+		~FlifImage(){
+			if( image && owning )
+				flif_destroy_image( image );
+		}
 		
 		uint32_t getWidth() const{ return flif_image_get_width( image ); }
 		uint32_t getHeight() const{ return flif_image_get_height( image ); }
@@ -92,17 +97,18 @@ class FlifDecoder{
 			{ return flif_decoder_num_loops( d ); }
 		
 		FlifImage getImage( size_t index ) const //??
-			{ return { flif_decoder_get_image( d, index ) }; }
+			{ return { flif_decoder_get_image( d, index ), false }; }
 };
 
 
 class FlifEncoder{
-	private:
+	public:
 		FLIF_ENCODER* encoder{ nullptr };
 		
 	public:
 		FlifEncoder() : encoder( flif_create_encoder() ){
 			//TODO: throw on nullptr
+			flif_encoder_set_alpha_zero_lossless( encoder );
 		}
 		FlifEncoder( const FlifEncoder& ) = delete;
 		FlifEncoder( FlifEncoder&& e ) : encoder( e.encoder ) { e.encoder = nullptr; }
