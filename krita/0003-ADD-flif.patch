@@ -1,0 +1,75 @@
+From 3982a6af10b1ec9ac4cb2e42f52adb7857c11ece Mon Sep 17 00:00:00 2001
+From: spillerrec <spillerrec@hotmail.com>
+Date: Sun, 26 Mar 2017 19:36:41 +0000
+Subject: [PATCH 1/2] ADD: flif
+
+---
+ plugins/impex/bmp/krita_bmp_export.json | 2 +-
+ plugins/impex/bmp/krita_bmp_import.json | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/impex/bmp/krita_bmp_export.json b/plugins/impex/bmp/krita_bmp_export.json
+index 124dcbb1e8..97bee47f80 100644
+--- a/plugins/impex/bmp/krita_bmp_export.json
++++ b/plugins/impex/bmp/krita_bmp_export.json
+@@ -2,7 +2,7 @@
+     "Id": "Krita BMP Export Filter",
+     "NoDisplay": "true",
+     "Type": "Service",
+-    "X-KDE-Export": "image/bmp,image/x-xpixmap,image/x-xbitmap,image/vnd.microsoft.icon,image/webp",
++    "X-KDE-Export": "image/bmp,image/x-xpixmap,image/x-xbitmap,image/vnd.microsoft.icon,image/webp,image/x-flif",
+     "X-KDE-Library": "kritabmpexport",
+     "X-KDE-ServiceTypes": [
+         "Krita/FileFilter"
+diff --git a/plugins/impex/bmp/krita_bmp_import.json b/plugins/impex/bmp/krita_bmp_import.json
+index 931605e5d5..75369e6fe1 100644
+--- a/plugins/impex/bmp/krita_bmp_import.json
++++ b/plugins/impex/bmp/krita_bmp_import.json
+@@ -2,7 +2,7 @@
+     "Id": "Krita BMP Import Filter",
+     "NoDisplay": "true",
+     "Type": "Service",
+-    "X-KDE-Import": "image/bmp,image/x-xpixmap,image/gif,image/x-xbitmap,image/webp",
++    "X-KDE-Import": "image/bmp,image/x-xpixmap,image/gif,image/x-xbitmap,image/webp,image/x-flif",
+     "X-KDE-Library": "kritabmpimport",
+     "X-KDE-ServiceTypes": [
+         "Krita/FileFilter"
+-- 
+2.12.0
+
+
+From 48b74337a54b1417e3965d9618d0113928370383 Mon Sep 17 00:00:00 2001
+From: spillerrec <spillerrec@hotmail.com>
+Date: Sun, 26 Mar 2017 20:16:25 +0000
+Subject: [PATCH 2/2] add flif extension as well
+
+---
+ plugins/impex/bmp/krita_bmp_export.json | 2 +-
+ plugins/impex/bmp/krita_bmp_import.json | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/impex/bmp/krita_bmp_export.json b/plugins/impex/bmp/krita_bmp_export.json
+index 97bee47f80..407dab3630 100644
+--- a/plugins/impex/bmp/krita_bmp_export.json
++++ b/plugins/impex/bmp/krita_bmp_export.json
+@@ -8,5 +8,5 @@
+         "Krita/FileFilter"
+     ],
+     "X-KDE-Weight": "1",
+-    "X-KDE-Extensions" : "bmp,xpm,xbm,ico,webp"
++    "X-KDE-Extensions" : "bmp,xpm,xbm,ico,webp,flif"
+ }
+diff --git a/plugins/impex/bmp/krita_bmp_import.json b/plugins/impex/bmp/krita_bmp_import.json
+index 75369e6fe1..553b1b4872 100644
+--- a/plugins/impex/bmp/krita_bmp_import.json
++++ b/plugins/impex/bmp/krita_bmp_import.json
+@@ -8,5 +8,5 @@
+         "Krita/FileFilter"
+     ],
+     "X-KDE-Weight": "1",
+-    "X-KDE-Extensions" : "bmp,gif,webp,xbm"
++    "X-KDE-Extensions" : "bmp,gif,webp,xbm,flif"
+ }
+-- 
+2.12.0
+
