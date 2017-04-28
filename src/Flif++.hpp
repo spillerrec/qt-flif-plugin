@@ -78,8 +78,13 @@ class FlifDecoder{
 		void setResize( uint32_t width, uint32_t height )
 			{ flif_decoder_set_resize( d, width, height ); }
 		
-		void setCallback( uint32_t (*callback)(int32_t,int64_t) )
-			{ flif_decoder_set_callback( d, callback ); }
+		/* Temporarily out-commented so we can support both stable and lasted commit
+		void setCallback( callback_t callback, void* user_data=nullptr )
+			{ flif_decoder_set_callback( d, callback, user_data ); }
+		
+		void setCallbackFirstQuality( int32_t quality )
+			{ flif_decoder_set_first_callback_quality( d, quality ); }
+		*/
 		
 		void setFirstCallbackQuality( int32_t quality )
 			{ flif_decoder_set_first_callback_quality( d, quality ); }
