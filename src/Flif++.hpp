@@ -54,6 +54,13 @@ class FlifImage{
 		
 		void writeRowRgba8( uint32_t row, const void* buffer, size_t buffer_size_bytes )
 			{ flif_image_write_row_RGBA8( image, row, buffer, buffer_size_bytes ); }
+			
+		FLIF_IMAGE* stealImage(){
+			if( !owning )
+				throw std::runtime_error( "Can't move image which is not owned" );
+			owning = false;
+			return image;
+		}
 };
 
 class FlifDecoder{
@@ -113,11 +120,13 @@ class FlifEncoder{
 	public:
 		FlifEncoder() : encoder( flif_create_encoder() ){
 			//TODO: throw on nullptr
-			flif_encoder_set_alpha_zero_lossless( encoder );
 		}
 		FlifEncoder( const FlifEncoder& ) = delete;
 		FlifEncoder( FlifEncoder&& e ) : encoder( e.encoder ) { e.encoder = nullptr; }
 		~FlifEncoder(){ flif_destroy_encoder( encoder ); }
+		
+		void setAlphaZeroLossless()
+			{ flif_encoder_set_alpha_zero_lossless( encoder ); }
 		
 		void setInterlaced( uint32_t interlaced )
 			{ flif_encoder_set_interlaced( encoder, interlaced ); }
@@ -143,9 +152,13 @@ class FlifEncoder{
 		void setSplitThreshold( int32_t split_threshold )
 			{ flif_encoder_set_split_threshold( encoder, split_threshold ); }
 		
+		void setLossy( int32_t loss )
+			{ flif_encoder_set_lossy( encoder, loss ); }
 		
 		void addImage( FlifImage& image )
-			{ flif_encoder_add_image( encoder, image.image ); } //TODO: fix
+			{ flif_encoder_add_image( encoder, image.image ); }
+		void addImage( FlifImage&& image )
+			{ flif_encoder_add_image_move( encoder, image.stealImage() ); }
 		int32_t encodeFile( const char* filename )
 			{ return flif_encoder_encode_file( encoder, filename ); }
 		int32_t encodeMemory( void** buffer, size_t& buffer_size_bytes )

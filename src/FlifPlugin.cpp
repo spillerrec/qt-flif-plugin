@@ -34,16 +34,16 @@ Q_EXPORT_PLUGIN2(pnp_flifplugin, FlifPlugin)
 
 class FlifHandler: public QImageIOHandler{
 	private:
-		int quality;
+		int quality{ 100 };
 		FlifDecoder decoder;
 		int frame{ -1 };
 		int lastImageDelay{ 0 };
+		bool save_transparent{ true };
 		
 	public:
 		FlifHandler( QIODevice *device ){
 			setDevice( device );
 			setFormat( "flif" );
-			quality = 100;
 		}
 		
 		bool loaded() const{ return frame >= 0; }
@@ -56,6 +56,7 @@ class FlifHandler: public QImageIOHandler{
 			switch( option ){
 				case Quality: return true;
 				case Animation: return true;
+				case CompressionRatio: return true;
 				default: return false;
 			};
 		}
@@ -73,15 +74,20 @@ class FlifHandler: public QImageIOHandler{
 		int loopCount() const override{ return /*decoder.loopCount()*/-1; } //TODO: Figure out this value
 		int currentImageNumber() const override{ return frame; }
 		
+		void setCompression( int value );
+		int getCompression() const;
+		
 		void setOption( ImageOption option, const QVariant& value ) override{
 			switch( option ){
 				case Quality: quality = value.toInt(); break;
+				case CompressionRatio: setCompression( value.toInt() );
 				default: break;
 			};
 		}
 		QVariant option( ImageOption option ) const override{
 			switch( option ){
 				case Animation: return loaded() ? loopCount() != 0 : true; //TODO: is true the good default?
+				case CompressionRatio: return getCompression();
 				default: return {};
 			}
 		}
@@ -89,6 +95,16 @@ class FlifHandler: public QImageIOHandler{
 
 bool FlifHandler::canRead() const{
 	return format() == "flif";
+}
+
+void FlifHandler::setCompression( int value ){
+	switch( value ){
+		case 1: save_transparent = false;
+		default: save_transparent = true;
+	}
+}
+int FlifHandler::getCompression() const{
+	return save_transparent ? 0 : 1;
 }
 
 
@@ -138,17 +154,25 @@ static void addImage( FlifEncoder& encoder, const QImage& in ){
 		img.writeRowRgba8( iy, buffer.get(), in.width() * 4 );
 	}
 	
-	encoder.addImage( img ); //TODO: investigate memory model
+	encoder.addImage( std::move(img) );
 }
 
 bool FlifHandler::write( const QImage& image ){
-	//No mention of how animation is to be handled, I believe it is not supported
+	//No mention of how animation is to be handled, I believe it is not supported by Qt
 	frame++;
 	if( frame != 0 )
 		return false;
 	
 	FlifEncoder encoder;
 	
+	//Keep transparent pixel information
+	if( save_transparent )
+		encoder.setAlphaZeroLossless();
+	
+	//Lossy compression, 'quality == 100' is lossless
+	encoder.setLossy( 100 - quality );
+	
+	//Encode image
 	if( image.format() != QImage::Format_RGB32 && image.format() != QImage::Format_ARGB32 )
 		addImage( encoder, image.convertToFormat( QImage::Format_ARGB32 ) );
 	else
@@ -160,7 +184,7 @@ bool FlifHandler::write( const QImage& image ){
 	if( !encoder.encodeMemory( (void**)&data, size ) )
 		return false;
 	device()->write( data, size );
-	free( data );
+	free( data ); //TODO: How to avoid calling this manually?
 	
 	return true;
 }
